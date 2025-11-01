@@ -1,0 +1,30 @@
+# frameworks like oh-my-zsh are supported
+ohmyzsh/ohmyzsh path:lib
+
+ohmyzsh/ohmyzsh path:plugins/composer
+ohmyzsh/ohmyzsh path:plugins/copypath
+ohmyzsh/ohmyzsh path:plugins/copyfile
+ohmyzsh/ohmyzsh path:plugins/cp
+ohmyzsh/ohmyzsh path:plugins/git
+ohmyzsh/ohmyzsh path:plugins/git-auto-fetch
+ohmyzsh/ohmyzsh path:plugins/git-extras
+ohmyzsh/ohmyzsh path:plugins/sudo
+ohmyzsh/ohmyzsh path:plugins/fzf
+ohmyzsh/ohmyzsh path:plugins/ubuntu
+ohmyzsh/ohmyzsh path:plugins/docker-compose
+ohmyzsh/ohmyzsh path:plugins/colored-man-pages
+ohmyzsh/ohmyzsh path:plugins/magic-enter
+ohmyzsh/ohmyzsh path:plugins/zoxide
+
+# prompt
+romkatv/powerlevel10k
+
+# popular fish-like plugins
+djui/alias-tips
+mattmc3/zfunctions
+zsh-users/zsh-completions
+Aloxaf/fzf-tab
+zsh-users/zsh-history-substring-search
+zsh-users/zsh-autosuggestions
+#zsh-users/zsh-syntax-highlighting
+zdharma-continuum/fast-syntax-highlighting

@@ -1,0 +1,9 @@
+{
+	skip_install_trust
+	auto_https off
+
+	frankenphp {
+	}
+}
+
+import caddy.d/*.caddyfile

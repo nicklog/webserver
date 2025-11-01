@@ -1,0 +1,12 @@
+(php_server) {
+    php_server {
+        root /app/public/
+        env APP_RUNTIME Runtime\FrankenPhpSymfony\Runtime
+        worker {
+           file index.php
+           num 2
+           watch
+           env APP_RUNTIME Runtime\FrankenPhpSymfony\Runtime
+        }
+    }
+}

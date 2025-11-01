@@ -1,0 +1,17 @@
+#!/usr/bin/env zsh
+
+# Easier navigation: .., ..., ...., ....., ~ and -
+alias cd="z"
+alias ..="cd .."
+alias ...="cd ../.."
+alias ....="cd ../../.."
+alias .....="cd ../../../.."
+alias ~="cd ~" # `cd` is probably faster to type though
+alias -- -="cd -"
+
+alias l='eza --long --all --group-directories-first --header --git --icons --color=always --time-style=long-iso'
+alias ll='l'
+alias ld='l -D'
+alias lf='l -f'
+
+alias rr='rm -rf'

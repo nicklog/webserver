@@ -1,0 +1,5 @@
+(mailpit_handler) {
+	handle /mailpit* {
+		reverse_proxy mailpit:8025
+	}
+}
