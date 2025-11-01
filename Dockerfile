@@ -34,7 +34,8 @@ RUN apt install -qqy --no-install-recommends --fix-missing \
     patch \
     git \
     jq \
-    htop
+    htop \
+	gettext
 
 # mariadb
 RUN apt install -qqy --no-install-recommends --fix-missing \
@@ -77,10 +78,9 @@ COPY --from=composer/composer:2-bin /composer /usr/bin/composer
 RUN curl https://frankenphp.dev/install.sh | sh && \
     mv frankenphp /usr/local/bin/
 
-# add app user, set dummy password for sudo access
+# add app user
 RUN groupadd -g "${GID}" app && \
-    useradd -m -g app --shell /usr/bin/zsh -u "${UID}" app && \
-    echo "app ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
+	useradd -m -g app --shell /usr/bin/zsh -u "${UID}" app
 
 # configure php-fpm
 RUN mkdir -p /run/php
@@ -96,7 +96,11 @@ ADD docker/files/msmtprc /etc/msmtprc
 ADD zsh/ /home/app/
 
 # link mysql config
-ADD docker/files/.my.cnf /home/app/.my.cnf
+ADD docker/files/.my.cnf.template /home/app/.my.cnf.template
+
+# startup script
+ADD startup/ /usr/local/bin/startup/
+RUN chmod +x /usr/local/bin/startup/*.sh
 
 ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
@@ -105,14 +109,12 @@ ENV PNPM_HOME=/home/app/.pnpm-store
 RUN mkdir -p /app/public
 RUN chown -R app:app /home/app /app
 
-VOLUME ["/home/app"]
-
 # expose ports
 EXPOSE 80
 EXPOSE 9999
 
 # start services
-CMD frankenphp run -c /etc/frankenphp/Caddyfile -w
+CMD ["/bin/bash", "-c", "for script in /usr/local/bin/startup/*.sh; do [ -x \"$script\" ] && \"$script\"; done"]
 
 USER app:app
 WORKDIR /app

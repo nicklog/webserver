@@ -1,0 +1,9 @@
+[client]
+default_character_set=utf8mb4
+host=${MYSQL_HOST}
+user=${MYSQL_USER}
+password=${MYSQL_PASSWORD}
+
+[mysql]
+database=${MYSQL_DATABASE}
+prompt="MySQL [\d]> "
