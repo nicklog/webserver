@@ -1,8 +1,15 @@
+ARG PHP_VERSION=8.4
+ARG COMPOSER_VERSION=2
+
+FROM dunglas/frankenphp:1-php${PHP_VERSION} AS frankenphp
+FROM composer/composer:${COMPOSER_VERSION}-bin  AS composerbin
+
 FROM debian:trixie-slim
 
 ARG DEBIAN_FRONTEND=noninteractive
 ARG UID=1000
 ARG GID=1000
+ARG PHP_VERSION
 
 # install absolute basics
 RUN apt update -q && \
@@ -15,16 +22,15 @@ RUN apt update -q && \
         lsb-release \
         ca-certificates
 
-# add trusted keys
-ADD docker/trusted/ /etc/apt/keyrings/
-RUN chmod 644 /etc/apt/keyrings/*
-
 # install repositories
+ADD docker/trusted/ /etc/apt/keyrings/
 ADD docker/sources/ /etc/apt/sources.list.d/
+RUN chmod 644 /etc/apt/keyrings/*
 RUN apt update -q
 
 # install base packages
 RUN apt install -qqy --no-install-recommends --fix-missing \
+    libcap2-bin \
     pv \
     less \
     nano \
@@ -50,19 +56,19 @@ RUN apt install -qqy --no-install-recommends --fix-missing \
 
 # install php
 RUN apt install -qqy --no-install-recommends --fix-missing \
-    php8.4-cli \
-    php8.4-mbstring \
-    php8.4-mysql \
-    php8.4-curl \
-    php8.4-xml \
-    php8.4-zip \
-    php8.4-pdo \
-    php8.4-intl \
-    php8.4-soap \
-    php8.4-gd \
-    php8.4-opcache \
-    php8.4-imagick \
-    php8.4-bcmath
+    php${PHP_VERSION}-cli \
+    php${PHP_VERSION}-mbstring \
+    php${PHP_VERSION}-mysql \
+    php${PHP_VERSION}-curl \
+    php${PHP_VERSION}-xml \
+    php${PHP_VERSION}-zip \
+    php${PHP_VERSION}-pdo \
+    php${PHP_VERSION}-intl \
+    php${PHP_VERSION}-soap \
+    php${PHP_VERSION}-gd \
+    php${PHP_VERSION}-opcache \
+    php${PHP_VERSION}-imagick \
+    php${PHP_VERSION}-bcmath
 
 # install nodejs
 RUN apt install -qqy --no-install-recommends --fix-missing \
@@ -72,21 +78,23 @@ RUN apt install -qqy --no-install-recommends --fix-missing \
 RUN npm install -g pnpm
 
 # copy the Composer PHAR from the Composer image into the PHP image
-COPY --from=composer/composer:2-bin /composer /usr/bin/composer
+COPY --link --from=composerbin /composer /usr/bin/composer
 
-# copy frankenphp
-RUN curl https://frankenphp.dev/install.sh | sh && \
-    mv frankenphp /usr/local/bin/
+COPY --link --from=frankenphp /usr/local/lib/libwatcher* /usr/local/lib/
+COPY --link --from=frankenphp /usr/local/lib/libphp.so* /usr/local/lib/
+COPY --link --from=frankenphp /usr/local/bin/frankenphp /usr/local/bin/
+
+RUN ldconfig /usr/local/lib
+RUN setcap cap_net_bind_service=+ep /usr/local/bin/frankenphp
 
 # add app user
 RUN groupadd -g "${GID}" app && \
 	useradd -m -g app --shell /usr/bin/zsh -u "${UID}" app
 
 # configure php-fpm
-RUN mkdir -p /run/php
-ADD frankenphp/php.d/custom.ini /etc/php/8.4/cli/conf.d/50-custom.ini
+ADD frankenphp/php.d/custom.ini /etc/php/${PHP_VERSION}/cli/conf.d/50-custom.ini
 
-RUN mkdir -p /run/frankenphp
+RUN mkdir -p /etc/frankenphp
 ADD frankenphp/ /etc/frankenphp
 
 # configure msmtp
@@ -99,7 +107,9 @@ ADD zsh/ /home/app/
 ADD docker/files/.my.cnf.template /home/app/.my.cnf.template
 
 # startup script
-ADD startup/ /usr/local/bin/startup/
+ADD startup/ups/ /usr/local/bin/startup/
+ADD startup/startup.sh /usr/local/bin/startup
+RUN chmod +x /usr/local/bin/startup
 RUN chmod +x /usr/local/bin/startup/*.sh
 
 ENV TERM=xterm-256color
@@ -111,10 +121,9 @@ RUN chown -R app:app /home/app /app
 
 # expose ports
 EXPOSE 80
-EXPOSE 9999
 
 # start services
-CMD ["/bin/bash", "-c", "for script in /usr/local/bin/startup/*.sh; do [ -x \"$script\" ] && \"$script\"; done"]
+CMD ["/usr/local/bin/startup.sh"]
 
 USER app:app
 WORKDIR /app
