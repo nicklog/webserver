@@ -1,0 +1,5 @@
+Types: deb
+URIs: https://pkg.henderkes.com/api/packages/85/debian
+Suites: php-zts
+Components: main
+Signed-By: /etc/apt/keyrings/static-php85.gpg

@@ -1,8 +1,8 @@
-:80 {
+:8000 {
     root * /app/public/
 	encode zstd br gzip
 
-	# Mailpit Web-UI Reverse Proxy
-	import mailpit_handler
-	import php_server
+    php_server {
+        root /app/public/
+    }
 }

@@ -1,7 +1,7 @@
-ARG PHP_VERSION=8.4
+ARG PHP_VERSION=8.5
 ARG COMPOSER_VERSION=2
+ARG PNPM_VERSION=latest-10
 
-FROM dunglas/frankenphp:1-php${PHP_VERSION} AS frankenphp
 FROM composer/composer:${COMPOSER_VERSION}-bin  AS composerbin
 
 FROM debian:trixie-slim
@@ -10,6 +10,7 @@ ARG DEBIAN_FRONTEND=noninteractive
 ARG UID=1000
 ARG GID=1000
 ARG PHP_VERSION
+ARG PNPM_VERSION
 
 # install absolute basics
 RUN apt update -q && \
@@ -30,13 +31,10 @@ RUN apt update -q
 
 # install base packages
 RUN apt install -qqy --no-install-recommends --fix-missing \
-    libcap2-bin \
     pv \
     less \
     nano \
     unzip \
-    msmtp \
-    msmtp-mta \
     patch \
     git \
     jq \
@@ -66,26 +64,22 @@ RUN apt install -qqy --no-install-recommends --fix-missing \
     php${PHP_VERSION}-intl \
     php${PHP_VERSION}-soap \
     php${PHP_VERSION}-gd \
-    php${PHP_VERSION}-opcache \
     php${PHP_VERSION}-imagick \
     php${PHP_VERSION}-bcmath
+
+# install frankenphp
+RUN apt install -qqy --no-install-recommends --fix-missing \
+    frankenphp
 
 # install nodejs
 RUN apt install -qqy --no-install-recommends --fix-missing \
     nodejs
 
 # install pnpm
-RUN npm install -g pnpm
+RUN npm install -g pnpm@${PNPM_VERSION}
 
 # copy the Composer PHAR from the Composer image into the PHP image
 COPY --link --from=composerbin /composer /usr/bin/composer
-
-COPY --link --from=frankenphp /usr/local/lib/libwatcher* /usr/local/lib/
-COPY --link --from=frankenphp /usr/local/lib/libphp.so* /usr/local/lib/
-COPY --link --from=frankenphp /usr/local/bin/frankenphp /usr/local/bin/
-
-RUN ldconfig /usr/local/lib
-RUN setcap cap_net_bind_service=+ep /usr/local/bin/frankenphp
 
 # add app user
 RUN groupadd -g "${GID}" app && \
@@ -97,9 +91,6 @@ ADD frankenphp/php.d/custom.ini /etc/php/${PHP_VERSION}/cli/conf.d/50-custom.ini
 RUN mkdir -p /etc/frankenphp
 ADD frankenphp/ /etc/frankenphp
 
-# configure msmtp
-ADD docker/files/msmtprc /etc/msmtprc
-
 # zsh
 ADD zsh/ /home/app/
 
@@ -107,10 +98,10 @@ ADD zsh/ /home/app/
 ADD docker/files/.my.cnf.template /home/app/.my.cnf.template
 
 # startup script
-ADD startup/ups/ /usr/local/bin/startup/
-ADD startup/startup.sh /usr/local/bin/startup
-RUN chmod +x /usr/local/bin/startup
-RUN chmod +x /usr/local/bin/startup/*.sh
+ADD startup/ups/ /usr/local/bin/startup/ups
+ADD startup/startup.sh /usr/local/bin/startup/startup
+RUN chmod +x /usr/local/bin/startup/startup
+RUN chmod +x /usr/local/bin/startup/ups/*.sh
 
 ENV TERM=xterm-256color
 ENV COLORTERM=truecolor
@@ -119,11 +110,14 @@ ENV PNPM_HOME=/home/app/.pnpm-store
 RUN mkdir -p /app/public
 RUN chown -R app:app /home/app /app
 
+# load zsh plugins
+RUN su app -c "zsh -c 'source /home/app/.zshrc'"
+
 # expose ports
-EXPOSE 80
+EXPOSE 8000
 
 # start services
-CMD ["/usr/local/bin/startup.sh"]
+CMD ["/usr/local/bin/startup/startup"]
 
 USER app:app
 WORKDIR /app

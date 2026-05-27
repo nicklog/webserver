@@ -2,16 +2,9 @@
 ohmyzsh/ohmyzsh path:lib
 
 ohmyzsh/ohmyzsh path:plugins/composer
-ohmyzsh/ohmyzsh path:plugins/copypath
-ohmyzsh/ohmyzsh path:plugins/copyfile
 ohmyzsh/ohmyzsh path:plugins/cp
-ohmyzsh/ohmyzsh path:plugins/git
-ohmyzsh/ohmyzsh path:plugins/git-auto-fetch
-ohmyzsh/ohmyzsh path:plugins/git-extras
 ohmyzsh/ohmyzsh path:plugins/sudo
 ohmyzsh/ohmyzsh path:plugins/fzf
-ohmyzsh/ohmyzsh path:plugins/ubuntu
-ohmyzsh/ohmyzsh path:plugins/docker-compose
 ohmyzsh/ohmyzsh path:plugins/colored-man-pages
 ohmyzsh/ohmyzsh path:plugins/magic-enter
 ohmyzsh/ohmyzsh path:plugins/zoxide
