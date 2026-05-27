@@ -38,10 +38,9 @@ RUN export FRANKENPHP_API=$(echo $PHP_VERSION | tr -d .) && \
         < /etc/apt/sources.list.d/nodesource.sources.template \
         > /etc/apt/sources.list.d/nodesource.sources && \
     rm /etc/apt/sources.list.d/*.sources.template
-RUN apt update -q
 
-# install base packages
-RUN apt install -qqy --no-install-recommends --fix-missing \
+RUN apt update -q && \
+    apt install -qqy --no-install-recommends --fix-missing \
     pv \
     less \
     nano \
@@ -49,21 +48,12 @@ RUN apt install -qqy --no-install-recommends --fix-missing \
     patch \
     git \
     jq \
-    htop
-
-# mariadb
-RUN apt install -qqy --no-install-recommends --fix-missing \
-    mariadb-client
-
-# for zsh
-RUN apt install -qqy --no-install-recommends --fix-missing \
+    htop \
+    mariadb-client \
     eza \
     zsh \
     fzf \
-    zoxide
-
-# install php
-RUN apt install -qqy --no-install-recommends --fix-missing \
+    zoxide \
     php${PHP_VERSION}-cli \
     php${PHP_VERSION}-mbstring \
     php${PHP_VERSION}-mysql \
@@ -75,14 +65,8 @@ RUN apt install -qqy --no-install-recommends --fix-missing \
     php${PHP_VERSION}-soap \
     php${PHP_VERSION}-gd \
     php${PHP_VERSION}-imagick \
-    php${PHP_VERSION}-bcmath
-
-# install frankenphp
-RUN apt install -qqy --no-install-recommends --fix-missing \
-    frankenphp
-
-# install nodejs
-RUN apt install -qqy --no-install-recommends --fix-missing \
+    php${PHP_VERSION}-bcmath \
+    frankenphp \
     nodejs
 
 # install pnpm
