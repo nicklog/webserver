@@ -1,0 +1,5 @@
+Types: deb
+URIs: https://pkg.henderkes.com/api/packages/${FRANKENPHP_API}/debian
+Suites: php-zts
+Components: main
+Signed-By: /etc/apt/keyrings/frankenphp.gpg

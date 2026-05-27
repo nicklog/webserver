@@ -1,5 +1,5 @@
 Types: deb
-URIs: https://deb.nodesource.com/node_24.x
+URIs: https://deb.nodesource.com/node_${NODE_MAJOR}.x
 Suites: nodistro
 Components: main
 Signed-By: /etc/apt/keyrings/nodesource.gpg

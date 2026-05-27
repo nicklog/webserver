@@ -1,6 +1,7 @@
 ARG PHP_VERSION=8.5
 ARG COMPOSER_VERSION=2
 ARG PNPM_VERSION=latest-10
+ARG NODE_MAJOR=24
 
 FROM composer/composer:${COMPOSER_VERSION}-bin  AS composerbin
 
@@ -11,6 +12,7 @@ ARG UID=1000
 ARG GID=1000
 ARG PHP_VERSION
 ARG PNPM_VERSION
+ARG NODE_MAJOR
 
 # install absolute basics
 RUN apt update -q && \
@@ -21,12 +23,21 @@ RUN apt update -q && \
         gnupg \
         apt-transport-https \
         lsb-release \
-        ca-certificates
+        ca-certificates \
+        gettext
 
 # install repositories
 ADD docker/trusted/ /etc/apt/keyrings/
 ADD docker/sources/ /etc/apt/sources.list.d/
 RUN chmod 644 /etc/apt/keyrings/*
+RUN export FRANKENPHP_API=$(echo $PHP_VERSION | tr -d .) && \
+    envsubst '$FRANKENPHP_API' \
+        < /etc/apt/sources.list.d/frankenphp.sources.template \
+        > /etc/apt/sources.list.d/frankenphp.sources && \
+    envsubst '$NODE_MAJOR' \
+        < /etc/apt/sources.list.d/nodesource.sources.template \
+        > /etc/apt/sources.list.d/nodesource.sources && \
+    rm /etc/apt/sources.list.d/*.sources.template
 RUN apt update -q
 
 # install base packages
@@ -38,8 +49,7 @@ RUN apt install -qqy --no-install-recommends --fix-missing \
     patch \
     git \
     jq \
-    htop \
-	gettext
+    htop
 
 # mariadb
 RUN apt install -qqy --no-install-recommends --fix-missing \
