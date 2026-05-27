@@ -14,6 +14,9 @@ ARG PHP_VERSION
 ARG PNPM_VERSION
 ARG NODE_MAJOR
 
+ENV COMPOSER_HOME="/home/app/.composer"
+ENV PNPM_HOME="/home/app/.pnpm-store"
+
 # install absolute basics
 RUN apt update -q && \
     apt upgrade -y -q && \
@@ -67,6 +70,13 @@ RUN apt update -q && \
     php${PHP_VERSION}-imagick \
     php${PHP_VERSION}-bcmath \
     frankenphp \
+    php-zts-zip \
+    php-zts-intl \
+    php-zts-soap \
+    php-zts-gd \
+    php-zts-imagick \
+    php-zts-bcmath \
+    php-zts-pcov \
     nodejs
 
 # install pnpm
@@ -106,9 +116,6 @@ RUN chown -R app:app /home/app /app
 
 # load zsh plugins
 RUN su app -c "zsh -c 'source /home/app/.zshrc'"
-
-# expose ports
-EXPOSE 8000
 
 # start services
 CMD ["/usr/local/bin/startup/startup"]
