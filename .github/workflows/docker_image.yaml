@@ -3,7 +3,7 @@ name: Create and publish a Docker image
 on:
   push:
     branches:
-      - 'main'
+      - main
   schedule:
     - cron: '0 3 * * *'
 
@@ -11,141 +11,141 @@ env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
 
+permissions:
+  contents: read
+
 jobs:
-  build-prod:
-    runs-on: ubuntu-latest
+  build:
+    name: Build ${{ matrix.name }}
     strategy:
+      fail-fast: false
       matrix:
-        php_version: [8.4, 8.5]
+        include:
+          # Production
+          - name: prod-php8.4
+            target: prod
+            build-args: |
+              PHP_VERSION=8.4
+            cache-scope: prod-php8.4
+            tags: |
+              type=raw,value=php8.4
+
+          - name: prod-php8.5
+            target: prod
+            build-args: |
+              PHP_VERSION=8.5
+            cache-scope: prod-php8.5
+            tags: |
+              type=raw,value=php8.5
+              type=raw,value=latest
+
+          # Development PHP 8.4
+          - name: dev-php8.4-node24-pnpm10
+            target: dev
+            build-args: |
+              PHP_VERSION=8.4
+              NODE_MAJOR=24
+              PNPM_VERSION=latest-10
+            cache-scope: dev-php8.4-node24-pnpm10
+            tags: |
+              type=raw,value=php8.4-node24-pnpm10-dev
+
+          - name: dev-php8.4-node24-pnpm11
+            target: dev
+            build-args: |
+              PHP_VERSION=8.4
+              NODE_MAJOR=24
+              PNPM_VERSION=latest-11
+            cache-scope: dev-php8.4-node24-pnpm11
+            tags: |
+              type=raw,value=php8.4-node24-pnpm11-dev
+              type=raw,value=php8.4-node24-dev
+              type=raw,value=php8.4-dev
+
+          - name: dev-php8.4-node26-pnpm10
+            target: dev
+            build-args: |
+              PHP_VERSION=8.4
+              NODE_MAJOR=26
+              PNPM_VERSION=latest-10
+            cache-scope: dev-php8.4-node26-pnpm10
+            tags: |
+              type=raw,value=php8.4-node26-pnpm10-dev
+
+          - name: dev-php8.4-node26-pnpm11
+            target: dev
+            build-args: |
+              PHP_VERSION=8.4
+              NODE_MAJOR=26
+              PNPM_VERSION=latest-11
+            cache-scope: dev-php8.4-node26-pnpm11
+            tags: |
+              type=raw,value=php8.4-node26-pnpm11-dev
+              type=raw,value=php8.4-node26-dev
+
+          # Development PHP 8.5
+          - name: dev-php8.5-node24-pnpm10
+            target: dev
+            build-args: |
+              PHP_VERSION=8.5
+              NODE_MAJOR=24
+              PNPM_VERSION=latest-10
+            cache-scope: dev-php8.5-node24-pnpm10
+            tags: |
+              type=raw,value=php8.5-node24-pnpm10-dev
+
+          - name: dev-php8.5-node24-pnpm11
+            target: dev
+            build-args: |
+              PHP_VERSION=8.5
+              NODE_MAJOR=24
+              PNPM_VERSION=latest-11
+            cache-scope: dev-php8.5-node24-pnpm11
+            tags: |
+              type=raw,value=php8.5-node24-pnpm11-dev
+              type=raw,value=php8.5-node24-dev
+              type=raw,value=php8.5-dev
+
+          - name: dev-php8.5-node26-pnpm10
+            target: dev
+            build-args: |
+              PHP_VERSION=8.5
+              NODE_MAJOR=26
+              PNPM_VERSION=latest-10
+            cache-scope: dev-php8.5-node26-pnpm10
+            tags: |
+              type=raw,value=php8.5-node26-pnpm10-dev
+
+          - name: dev-php8.5-node26-pnpm11
+            target: dev
+            build-args: |
+              PHP_VERSION=8.5
+              NODE_MAJOR=26
+              PNPM_VERSION=latest-11
+            cache-scope: dev-php8.5-node26-pnpm11
+            tags: |
+              type=raw,value=php8.5-node26-pnpm11-dev
+              type=raw,value=php8.5-node26-dev
+              type=raw,value=latest-dev
+
+    uses: docker/github-builder/.github/workflows/build.yml@v1
     permissions:
       contents: read
+      id-token: write
       packages: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Generate tags
-        id: gen-tags
-        run: |
-          IMG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-          PHP="${{ matrix.php_version }}"
-
-          {
-            echo "tags<<EOF"
-            echo "${IMG}:php${PHP}"
-            if [ "$PHP" = "8.5" ]; then
-              echo "${IMG}:latest"
-            fi
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-          echo "Tags to apply:"
-          echo "  ${IMG}:php${PHP}"
-          if [ "$PHP" = "8.5" ]; then
-            echo "  ${IMG}:latest"
-          fi
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
+    with:
+      output: image
+      push: true
+      platforms: linux/amd64,linux/arm64
+      target: ${{ matrix.target }}
+      build-args: ${{ matrix.build-args }}
+      cache: true
+      cache-mode: max
+      cache-scope: ${{ matrix.cache-scope }}
+      meta-images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      meta-tags: ${{ matrix.tags }}
+    secrets:
+      registry-auths: |
+        - registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push production Docker image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          target: prod
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.gen-tags.outputs.tags }}
-          build-args: |
-            PHP_VERSION=${{ matrix.php_version }}
-          cache-from: type=gha,scope=prod-php${{ matrix.php_version }}
-          cache-to: type=gha,mode=max,scope=prod-php${{ matrix.php_version }}
-
-  build-dev:
-    runs-on: ubuntu-latest
-    strategy:
-      matrix:
-        php_version: [8.4, 8.5]
-        node_major: [24, 26]
-        pnpm_version: [10, 11]
-    permissions:
-      contents: read
-      packages: write
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v7
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v4
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v4
-
-      - name: Generate tags
-        id: gen-tags
-        run: |
-          IMG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-          PHP="${{ matrix.php_version }}"
-          NODE="${{ matrix.node_major }}"
-          PNPM="${{ matrix.pnpm_version }}"
-
-          {
-            echo "tags<<EOF"
-            echo "${IMG}:php${PHP}-node${NODE}-pnpm${PNPM}-dev"
-            if [ "$PNPM" = "11" ]; then
-              echo "${IMG}:php${PHP}-node${NODE}-dev"
-            fi
-            if [ "$NODE" = "24" ] && [ "$PNPM" = "11" ]; then
-              echo "${IMG}:php${PHP}-dev"
-            fi
-            if [ "$PHP" = "8.5" ] && [ "$NODE" = "26" ] && [ "$PNPM" = "11" ]; then
-              echo "${IMG}:latest-dev"
-            fi
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-          echo "Tags to apply:"
-          echo "  ${IMG}:php${PHP}-node${NODE}-pnpm${PNPM}-dev"
-          if [ "$PNPM" = "11" ]; then
-            echo "  ${IMG}:php${PHP}-node${NODE}-dev"
-          fi
-          if [ "$NODE" = "24" ] && [ "$PNPM" = "11" ]; then
-            echo "  ${IMG}:php${PHP}-dev"
-          fi
-          if [ "$PHP" = "8.5" ] && [ "$NODE" = "26" ] && [ "$PNPM" = "11" ]; then
-            echo "  ${IMG}:latest-dev"
-          fi
-
-      - name: Log in to the Container registry
-        uses: docker/login-action@v4
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build and push development Docker image
-        uses: docker/build-push-action@v7
-        with:
-          context: .
-          target: dev
-          push: true
-          platforms: linux/amd64,linux/arm64
-          tags: ${{ steps.gen-tags.outputs.tags }}
-          build-args: |
-            PHP_VERSION=${{ matrix.php_version }}
-            NODE_MAJOR=${{ matrix.node_major }}
-            PNPM_VERSION=latest-${{ matrix.pnpm_version }}
-          cache-from: type=gha,scope=dev-php${{ matrix.php_version }}-node${{ matrix.node_major }}-pnpm${{ matrix.pnpm_version }}
-          cache-to: type=gha,mode=max,scope=dev-php${{ matrix.php_version }}-node${{ matrix.node_major }}-pnpm${{ matrix.pnpm_version }}
