@@ -19,6 +19,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       include: ${{ steps.set.outputs.include }}
+      image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
     steps:
       - name: Generate build matrix
         id: set
@@ -91,7 +92,7 @@ jobs:
       cache: true
       cache-mode: max
       cache-scope: ${{ matrix.cache_scope }}
-      meta-images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+      meta-images: ${{ needs.matrix.outputs.image }}
       meta-tags: ${{ matrix.tags }}
     secrets:
       registry-auths: |
