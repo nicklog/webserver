@@ -93,15 +93,6 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v4
 
-      - name: Resolve pinned pnpm version
-        id: pnpm
-        run: |
-          case "${{ matrix.pnpm_version }}" in
-            10) echo "version=10.2.1" >> "$GITHUB_OUTPUT" ;;
-            11) echo "version=11.0.0" >> "$GITHUB_OUTPUT" ;;
-            *)  echo "version=${{ matrix.pnpm_version }}" >> "$GITHUB_OUTPUT" ;;
-          esac
-
       - name: Generate tags
         id: gen-tags
         run: |
@@ -155,6 +146,6 @@ jobs:
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
             NODE_MAJOR=${{ matrix.node_major }}
-            PNPM_VERSION=latest-${{ steps.pnpm.outputs.version }}
+            PNPM_VERSION=latest-${{ matrix.pnpm_version }}
           cache-from: type=gha,scope=dev-php${{ matrix.php_version }}-node${{ matrix.node_major }}-pnpm${{ matrix.pnpm_version }}
           cache-to: type=gha,mode=max,scope=dev-php${{ matrix.php_version }}-node${{ matrix.node_major }}-pnpm${{ matrix.pnpm_version }}
