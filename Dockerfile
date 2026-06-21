@@ -1,7 +1,7 @@
 ARG PHP_VERSION=8.5
 ARG COMPOSER_VERSION=2
 ARG PNPM_VERSION=latest-11
-ARG NODE_MAJOR=24
+ARG NODE_MAJOR=26
 ARG UID=1000
 ARG GID=1000
 
@@ -100,11 +100,6 @@ RUN mkdir -p /app/public /var/log/php && \
     chown -R app:app /home/app /app /var/log/php
 
 ENV TERM=xterm-256color
-
-EXPOSE 8000
-
-HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
-    CMD curl -sS --max-time 3 http://localhost:8000/ > /dev/null || exit 1
 
 CMD ["/usr/local/bin/startup/startup"]
 
