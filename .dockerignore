@@ -1,0 +1,40 @@
+# Git / Version control
+.git
+.github
+.gitignore
+
+# IDE / Editor
+.idea
+.vscode
+*.swp
+*.swo
+*~
+
+# Local environment / secrets
+.env
+.env.*
+!.env.example
+
+# Documentation
+*.md
+!README.md
+
+# Local development artifacts
+node_modules
+vendor
+dist
+build
+.tmp
+.cache
+
+# Docker
+Dockerfile*
+compose*.yml
+docker-compose*.yml
+.dockerignore
+
+# AI agent files
+.ai
+
+# Logs
+*.log

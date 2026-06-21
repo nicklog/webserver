@@ -1,6 +1,23 @@
 :8000 {
     root * /app/public/
-	encode zstd br gzip
+    encode zstd br gzip
+
+    header {
+        -Server
+    }
+
+    # Deny access to sensitive files and directories
+    @sensitive {
+        path .env .env.* *.env
+        path /composer.json /composer.lock
+        path *.log /logs/* /tmp/*
+        path /.git* /*.git/* /.gitignore
+        path /.htaccess /.htpasswd
+        path /server.caddyfile /Caddyfile
+    }
+    handle @sensitive {
+        respond 404
+    }
 
     php_server {
         root /app/public/

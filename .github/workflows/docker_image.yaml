@@ -12,7 +12,67 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  build-and-push-image:
+  build-prod:
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        php_version: [8.4, 8.5]
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v6
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Generate tags
+        id: gen-tags
+        run: |
+          IMG="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
+          PHP="${{ matrix.php_version }}"
+
+          {
+            echo "tags<<EOF"
+            echo "${IMG}:php${PHP}"
+            if [ "$PHP" = "8.5" ]; then
+              echo "${IMG}:latest"
+            fi
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          echo "Tags to apply:"
+          echo "  ${IMG}:php${PHP}"
+          if [ "$PHP" = "8.5" ]; then
+            echo "  ${IMG}:latest"
+          fi
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build and push production Docker image
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          target: prod
+          push: true
+          platforms: linux/amd64,linux/arm64
+          tags: ${{ steps.gen-tags.outputs.tags }}
+          build-args: |
+            PHP_VERSION=${{ matrix.php_version }}
+          cache-from: type=gha,scope=prod-php${{ matrix.php_version }}
+          cache-to: type=gha,mode=max,scope=prod-php${{ matrix.php_version }}
+
+  build-dev:
     runs-on: ubuntu-latest
     strategy:
       matrix:
@@ -22,18 +82,25 @@ jobs:
     permissions:
       contents: read
       packages: write
-      actions: write
 
     steps:
       - name: Checkout repository
         uses: actions/checkout@v6
 
       - name: Set up QEMU
-        if: startsWith(github.ref, 'refs/tags/')
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
+
+      - name: Resolve pinned pnpm version
+        id: pnpm
+        run: |
+          case "${{ matrix.pnpm_version }}" in
+            10) echo "version=10.2.1" >> "$GITHUB_OUTPUT" ;;
+            11) echo "version=11.0.0" >> "$GITHUB_OUTPUT" ;;
+            *)  echo "version=${{ matrix.pnpm_version }}" >> "$GITHUB_OUTPUT" ;;
+          esac
 
       - name: Generate tags
         id: gen-tags
@@ -45,29 +112,29 @@ jobs:
 
           {
             echo "tags<<EOF"
-            echo "${IMG}:php${PHP}-node${NODE}-pnpm${PNPM}"
+            echo "${IMG}:php${PHP}-node${NODE}-pnpm${PNPM}-dev"
             if [ "$PNPM" = "11" ]; then
-              echo "${IMG}:php${PHP}-node${NODE}"
+              echo "${IMG}:php${PHP}-node${NODE}-dev"
             fi
             if [ "$NODE" = "24" ] && [ "$PNPM" = "11" ]; then
-              echo "${IMG}:php${PHP}"
+              echo "${IMG}:php${PHP}-dev"
             fi
             if [ "$PHP" = "8.5" ] && [ "$NODE" = "26" ] && [ "$PNPM" = "11" ]; then
-              echo "${IMG}:latest"
+              echo "${IMG}:latest-dev"
             fi
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
           echo "Tags to apply:"
-          echo "  ${IMG}:php${PHP}-node${NODE}-pnpm${PNPM}"
+          echo "  ${IMG}:php${PHP}-node${NODE}-pnpm${PNPM}-dev"
           if [ "$PNPM" = "11" ]; then
-            echo "  ${IMG}:php${PHP}-node${NODE}"
+            echo "  ${IMG}:php${PHP}-node${NODE}-dev"
           fi
           if [ "$NODE" = "24" ] && [ "$PNPM" = "11" ]; then
-            echo "  ${IMG}:php${PHP}"
+            echo "  ${IMG}:php${PHP}-dev"
           fi
           if [ "$PHP" = "8.5" ] && [ "$NODE" = "26" ] && [ "$PNPM" = "11" ]; then
-            echo "  ${IMG}:latest"
+            echo "  ${IMG}:latest-dev"
           fi
 
       - name: Log in to the Container registry
@@ -77,16 +144,17 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Build and push Docker image
+      - name: Build and push development Docker image
         uses: docker/build-push-action@v6
         with:
           context: .
+          target: dev
           push: true
-          platforms: ${{ startsWith(github.ref, 'refs/tags/') && 'linux/amd64,linux/arm64' || 'linux/amd64' }}
+          platforms: linux/amd64,linux/arm64
           tags: ${{ steps.gen-tags.outputs.tags }}
           build-args: |
             PHP_VERSION=${{ matrix.php_version }}
             NODE_MAJOR=${{ matrix.node_major }}
-            PNPM_VERSION=latest-${{ matrix.pnpm_version }}
-          cache-from: type=gha,scope=php${{ matrix.php_version }}-node${{ matrix.node_major }}-pnpm${{ matrix.pnpm_version }}
-          cache-to: type=gha,mode=max,scope=php${{ matrix.php_version }}-node${{ matrix.node_major }}-pnpm${{ matrix.pnpm_version }}
+            PNPM_VERSION=latest-${{ steps.pnpm.outputs.version }}
+          cache-from: type=gha,scope=dev-php${{ matrix.php_version }}-node${{ matrix.node_major }}-pnpm${{ matrix.pnpm_version }}
+          cache-to: type=gha,mode=max,scope=dev-php${{ matrix.php_version }}-node${{ matrix.node_major }}-pnpm${{ matrix.pnpm_version }}
