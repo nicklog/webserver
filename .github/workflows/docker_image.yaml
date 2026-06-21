@@ -52,7 +52,7 @@ jobs:
             if [ "$NODE" = "24" ] && [ "$PNPM" = "11" ]; then
               echo "${IMG}:php${PHP}"
             fi
-            if [ "$PHP" = "8.5" ] && [ "$NODE" = "24" ] && [ "$PNPM" = "11" ]; then
+            if [ "$PHP" = "8.5" ] && [ "$NODE" = "26" ] && [ "$PNPM" = "11" ]; then
               echo "${IMG}:latest"
             fi
             echo "EOF"
@@ -66,7 +66,7 @@ jobs:
           if [ "$NODE" = "24" ] && [ "$PNPM" = "11" ]; then
             echo "  ${IMG}:php${PHP}"
           fi
-          if [ "$PHP" = "8.5" ] && [ "$NODE" = "24" ] && [ "$PNPM" = "11" ]; then
+          if [ "$PHP" = "8.5" ] && [ "$NODE" = "26" ] && [ "$PNPM" = "11" ]; then
             echo "  ${IMG}:latest"
           fi
 
