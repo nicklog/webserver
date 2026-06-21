@@ -16,8 +16,8 @@ jobs:
     runs-on: ubuntu-latest
     strategy:
       matrix:
-        php_version: [8.2, 8.3, 8.4, 8.5]
-        node_major: [22, 24]
+        php_version: [8.4, 8.5]
+        node_major: [24, 26]
         pnpm_version: [10, 11]
     permissions:
       contents: read
