@@ -29,6 +29,7 @@ RUN apt-get update -q && \
         gettext \
         gnupg \
         lsb-release \
+        util-linux \
         wget
 
 # Add package repositories (sury PHP + frankenPHP)
@@ -95,9 +96,6 @@ RUN mkdir -p /app/public /var/log/php && \
 
 ENV TERM=xterm-256color
 
-USER app:app
-WORKDIR /app
-
 EXPOSE 8000
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=5s --retries=3 \
@@ -111,12 +109,12 @@ CMD ["/usr/local/bin/startup/startup"]
 FROM base AS prod
 
 ARG PHP_VERSION
-USER root
 
 ADD frankenphp/php.d/production.ini /etc/php/${PHP_VERSION}/cli/conf.d/60-production.ini
 RUN chmod 644 /etc/php/${PHP_VERSION}/cli/conf.d/60-production.ini
 
 USER app:app
+WORKDIR /app
 
 # ------------------------------------------------------------------------------
 # Development stage: base + tooling
@@ -126,8 +124,6 @@ FROM base AS dev
 ARG PHP_VERSION
 ARG PNPM_VERSION
 ARG NODE_MAJOR
-
-USER root
 
 # Add development repositories (NodeSource + gierens for eza)
 ADD docker/sources/nodesource.sources.template /etc/apt/sources.list.d/
@@ -176,3 +172,4 @@ RUN mkdir -p /home/app/.pnpm-store && \
     su app -c "zsh -c 'source /home/app/.zshrc'" || true
 
 USER app:app
+WORKDIR /app

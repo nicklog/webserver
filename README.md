@@ -56,6 +56,17 @@ docker build --target dev --build-arg PHP_VERSION=8.5 --build-arg NODE_MAJOR=26 
 - Security headers (`X-Frame-Options`, `X-Content-Type-Options`, etc.) are set by default. HSTS is intentionally left to the TLS-terminating reverse proxy.
 - Composer is intentionally only available in the `dev` image.
 - Do not commit real credentials. Use `.env` locally and inject secrets via your orchestrator in production.
+- The container starts as `root` so it can adjust the `app` user's UID/GID to match the host. It then drops privileges and runs FrankenPHP as `app` via `setpriv`.
+
+## Runtime user mapping
+
+To run the container with a host user other than `1000:1000`, set `UID` and `GID`:
+
+```bash
+docker run -e UID=1234 -e GID=1234 ghcr.io/<owner>/webserver:php8.5
+```
+
+If not set, the container defaults to `1000:1000`.
 
 ## Dockerfile targets
 
