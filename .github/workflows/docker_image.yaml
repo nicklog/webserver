@@ -15,118 +15,67 @@ permissions:
   contents: read
 
 jobs:
+  matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      include: ${{ steps.set.outputs.include }}
+    steps:
+      - name: Generate build matrix
+        id: set
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const phpVersions = ['8.4', '8.5'];
+            const nodeMajors = ['24', '26'];
+            const pnpmVersions = ['10', '11'];
+            const lastPhp = phpVersions[phpVersions.length - 1];
+            const lastNode = nodeMajors[nodeMajors.length - 1];
+            const lastPnpm = pnpmVersions[pnpmVersions.length - 1];
+            const include = [];
+
+            for (const php of phpVersions) {
+              const tags = [`php${php}`];
+              if (php === '8.5') tags.push('latest');
+              include.push({
+                name: `prod-php${php}`,
+                target: 'prod',
+                build_args: `PHP_VERSION=${php}`,
+                cache_scope: `prod-php${php}`,
+                tags: tags.map(t => `type=raw,value=${t}`).join('\n'),
+              });
+            }
+
+            for (const php of phpVersions) {
+              for (const node of nodeMajors) {
+                for (const pnpm of pnpmVersions) {
+                  const tags = [`php${php}-node${node}-pnpm${pnpm}-dev`];
+                  if (pnpm === lastPnpm) tags.push(`php${php}-node${node}-dev`);
+                  if (node === lastNode && pnpm === lastPnpm) tags.push(`php${php}-dev`);
+                  if (php === lastPhp && node === lastNode && pnpm === lastPnpm) tags.push('latest-dev');
+                  include.push({
+                    name: `dev-php${php}-node${node}-pnpm${pnpm}`,
+                    target: 'dev',
+                    build_args: [
+                      `PHP_VERSION=${php}`,
+                      `NODE_MAJOR=${node}`,
+                      `PNPM_VERSION=latest-${pnpm}`,
+                    ].join('\n'),
+                    cache_scope: `dev-php${php}-node${node}-pnpm${pnpm}`,
+                    tags: tags.map(t => `type=raw,value=${t}`).join('\n'),
+                  });
+                }
+              }
+            }
+
+            core.setOutput('include', JSON.stringify(include));
+
   build:
     name: Build ${{ matrix.name }}
+    needs: matrix
     strategy:
       fail-fast: false
       matrix:
-        include:
-          # Production
-          - name: prod-php8.4
-            target: prod
-            build-args: |
-              PHP_VERSION=8.4
-            cache-scope: prod-php8.4
-            tags: |
-              type=raw,value=php8.4
-
-          - name: prod-php8.5
-            target: prod
-            build-args: |
-              PHP_VERSION=8.5
-            cache-scope: prod-php8.5
-            tags: |
-              type=raw,value=php8.5
-              type=raw,value=latest
-
-          # Development PHP 8.4
-          - name: dev-php8.4-node24-pnpm10
-            target: dev
-            build-args: |
-              PHP_VERSION=8.4
-              NODE_MAJOR=24
-              PNPM_VERSION=latest-10
-            cache-scope: dev-php8.4-node24-pnpm10
-            tags: |
-              type=raw,value=php8.4-node24-pnpm10-dev
-
-          - name: dev-php8.4-node24-pnpm11
-            target: dev
-            build-args: |
-              PHP_VERSION=8.4
-              NODE_MAJOR=24
-              PNPM_VERSION=latest-11
-            cache-scope: dev-php8.4-node24-pnpm11
-            tags: |
-              type=raw,value=php8.4-node24-pnpm11-dev
-              type=raw,value=php8.4-node24-dev
-              type=raw,value=php8.4-dev
-
-          - name: dev-php8.4-node26-pnpm10
-            target: dev
-            build-args: |
-              PHP_VERSION=8.4
-              NODE_MAJOR=26
-              PNPM_VERSION=latest-10
-            cache-scope: dev-php8.4-node26-pnpm10
-            tags: |
-              type=raw,value=php8.4-node26-pnpm10-dev
-
-          - name: dev-php8.4-node26-pnpm11
-            target: dev
-            build-args: |
-              PHP_VERSION=8.4
-              NODE_MAJOR=26
-              PNPM_VERSION=latest-11
-            cache-scope: dev-php8.4-node26-pnpm11
-            tags: |
-              type=raw,value=php8.4-node26-pnpm11-dev
-              type=raw,value=php8.4-node26-dev
-
-          # Development PHP 8.5
-          - name: dev-php8.5-node24-pnpm10
-            target: dev
-            build-args: |
-              PHP_VERSION=8.5
-              NODE_MAJOR=24
-              PNPM_VERSION=latest-10
-            cache-scope: dev-php8.5-node24-pnpm10
-            tags: |
-              type=raw,value=php8.5-node24-pnpm10-dev
-
-          - name: dev-php8.5-node24-pnpm11
-            target: dev
-            build-args: |
-              PHP_VERSION=8.5
-              NODE_MAJOR=24
-              PNPM_VERSION=latest-11
-            cache-scope: dev-php8.5-node24-pnpm11
-            tags: |
-              type=raw,value=php8.5-node24-pnpm11-dev
-              type=raw,value=php8.5-node24-dev
-              type=raw,value=php8.5-dev
-
-          - name: dev-php8.5-node26-pnpm10
-            target: dev
-            build-args: |
-              PHP_VERSION=8.5
-              NODE_MAJOR=26
-              PNPM_VERSION=latest-10
-            cache-scope: dev-php8.5-node26-pnpm10
-            tags: |
-              type=raw,value=php8.5-node26-pnpm10-dev
-
-          - name: dev-php8.5-node26-pnpm11
-            target: dev
-            build-args: |
-              PHP_VERSION=8.5
-              NODE_MAJOR=26
-              PNPM_VERSION=latest-11
-            cache-scope: dev-php8.5-node26-pnpm11
-            tags: |
-              type=raw,value=php8.5-node26-pnpm11-dev
-              type=raw,value=php8.5-node26-dev
-              type=raw,value=latest-dev
+        include: ${{ fromJson(needs.matrix.outputs.include) }}
 
     uses: docker/github-builder/.github/workflows/build.yml@v1
     permissions:
@@ -138,10 +87,10 @@ jobs:
       push: true
       platforms: linux/amd64,linux/arm64
       target: ${{ matrix.target }}
-      build-args: ${{ matrix.build-args }}
+      build-args: ${{ matrix.build_args }}
       cache: true
       cache-mode: max
-      cache-scope: ${{ matrix.cache-scope }}
+      cache-scope: ${{ matrix.cache_scope }}
       meta-images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
       meta-tags: ${{ matrix.tags }}
     secrets:
