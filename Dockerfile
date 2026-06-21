@@ -69,6 +69,12 @@ RUN apt-get update -q && \
         php-zts-imagick \
         php-zts-bcmath
 
+# Install OPcache explicitly for PHP versions where it is not bundled
+RUN case "$PHP_VERSION" in \
+        8.4|8.3|8.2|8.1|8.0) apt-get update -q && \
+            apt-get install -qqy --no-install-recommends --fix-missing "php${PHP_VERSION}-opcache" ;; \
+    esac
+
 # Create application user with fixed UID/GID
 RUN groupadd -g "${GID}" app && \
     useradd -m -g app --shell /usr/bin/bash -u "${UID}" app
