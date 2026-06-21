@@ -59,7 +59,6 @@ RUN apt-get update -q && \
         php${PHP_VERSION}-gd \
         php${PHP_VERSION}-imagick \
         php${PHP_VERSION}-bcmath \
-        php${PHP_VERSION}-opcache \
         frankenphp \
         php-zts-pdo-mysql \
         php-zts-zip \
