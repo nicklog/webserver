@@ -36,7 +36,7 @@ jobs:
 
             for (const php of phpVersions) {
               const tags = [`php${php}`];
-              if (php === '8.5') tags.push('latest');
+              if (php === lastPhp) tags.push('latest');
               include.push({
                 name: `prod-php${php}`,
                 target: 'prod',
