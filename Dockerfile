@@ -59,6 +59,7 @@ RUN apt-get update -q && \
         php${PHP_VERSION}-gd \
         php${PHP_VERSION}-imagick \
         php${PHP_VERSION}-bcmath \
+        php${PHP_VERSION}-redis \
         frankenphp \
         php-zts-pdo-mysql \
         php-zts-zip \
@@ -66,7 +67,8 @@ RUN apt-get update -q && \
         php-zts-soap \
         php-zts-gd \
         php-zts-imagick \
-        php-zts-bcmath
+        php-zts-bcmath \
+        php-zts-redis
 
 # Install OPcache explicitly for PHP versions where it is not bundled
 RUN case "$PHP_VERSION" in \
