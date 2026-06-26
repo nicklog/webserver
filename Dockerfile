@@ -46,6 +46,7 @@ RUN chmod 644 /etc/apt/keyrings/* && \
 # Install runtime packages
 RUN apt-get update -q && \
     apt-get install -qqy --no-install-recommends --fix-missing \
+        sudo \
         mariadb-client \
         php${PHP_VERSION}-cli \
         php${PHP_VERSION}-mbstring \
@@ -97,13 +98,20 @@ ADD startup/startup.sh /usr/local/bin/startup/startup
 ADD startup/ups/ /usr/local/bin/startup/ups/
 RUN chmod +x /usr/local/bin/startup/startup /usr/local/bin/startup/ups/*.sh
 
+# Allow app user to run startup as root via sudo
+RUN echo "app ALL=(root) NOPASSWD:SETENV: /usr/local/bin/startup/startup" > /etc/sudoers.d/app && \
+    chmod 440 /etc/sudoers.d/app
+
+ADD startup/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
+
 # Prepare application directory
 RUN mkdir -p /app/public /var/log/php && \
     chown -R app:app /home/app /app /var/log/php
 
 ENV TERM=xterm-256color
 
-CMD ["/usr/local/bin/startup/startup"]
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 
 # ------------------------------------------------------------------------------
 # Production stage: hardened PHP configuration
@@ -116,6 +124,7 @@ ADD frankenphp/php.d/production.ini /etc/php/${PHP_VERSION}/cli/conf.d/60-produc
 RUN chmod 644 /etc/php/${PHP_VERSION}/cli/conf.d/60-production.ini
 
 WORKDIR /app
+USER app
 
 # ------------------------------------------------------------------------------
 # Development stage: base + tooling
@@ -173,3 +182,4 @@ RUN mkdir -p /home/app/.pnpm-store && \
     su app -c "zsh -c 'source /home/app/.zshrc'" || true
 
 WORKDIR /app
+USER app

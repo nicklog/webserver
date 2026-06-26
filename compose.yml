@@ -10,3 +10,5 @@ services:
       MYSQL_PASSWORD: ${MYSQL_PASSWORD:-app}
       MYSQL_DATABASE: ${MYSQL_DATABASE:-app}
       PHP_INI_MEMORY_LIMIT: 512M
+      UID: 2001
+      GID: 2001
