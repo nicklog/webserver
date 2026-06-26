@@ -115,7 +115,6 @@ ARG PHP_VERSION
 ADD frankenphp/php.d/production.ini /etc/php/${PHP_VERSION}/cli/conf.d/60-production.ini
 RUN chmod 644 /etc/php/${PHP_VERSION}/cli/conf.d/60-production.ini
 
-USER app:app
 WORKDIR /app
 
 # ------------------------------------------------------------------------------
@@ -173,5 +172,4 @@ RUN mkdir -p /home/app/.pnpm-store && \
     chown -R app:app /home/app /app && \
     su app -c "zsh -c 'source /home/app/.zshrc'" || true
 
-USER app:app
 WORKDIR /app

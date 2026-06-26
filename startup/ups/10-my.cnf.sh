@@ -6,6 +6,7 @@ if [ -n "$MYSQL_HOST" ] && [ -n "$MYSQL_USER" ] && [ -n "$MYSQL_PASSWORD" ] && [
 
 	envsubst < /home/app/.my.cnf.template > /home/app/.my.cnf
 	chmod 600 /home/app/.my.cnf
+	chown app:app /home/app/.my.cnf
 else
 	echo "Not all MySQL environment variables are set; skipping .my.cnf generation"
 fi

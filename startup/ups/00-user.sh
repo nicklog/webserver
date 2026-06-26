@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-APP_UID=${UID:-1000}
-APP_GID=${GID:-1000}
+APP_UID=$(printenv UID || true)
+APP_GID=$(printenv GID || true)
+
+APP_UID=${APP_UID:-1000}
+APP_GID=${APP_GID:-1000}
 
 CURRENT_UID=$(id -u app)
 CURRENT_GID=$(id -g app)
